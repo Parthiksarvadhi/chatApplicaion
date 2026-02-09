@@ -10,6 +10,8 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { initSocket, disconnectSocket } from "@/services/socket";
+// import { initializeFirebaseMessaging, setupFirebaseNotificationListener } from '@/services/firebase';
+// import { userAPI } from '@/services/api';
 
 // Notification handler
 Notifications.setNotificationHandler({
@@ -44,21 +46,37 @@ function RootLayoutNav() {
     console.log("🔐 Auth check:", { isAuthenticated, loading });
 
     if (!loading) {
-      if (isAuthenticated) {
-        console.log("➡ Redirecting to /(tabs)/home");
-        router.replace("/(tabs)/home");
-      } else {
-        console.log("➡ Redirecting to /login");
-        router.replace("/login");
-      }
+      // Add a small delay to ensure routes are registered
+      const timer = setTimeout(() => {
+        if (isAuthenticated) {
+          console.log("➡ Redirecting to /(tabs)/home");
+          router.replace("/(tabs)/home");
+        } else {
+          console.log("➡ Redirecting to /login");
+          router.replace("/login");
+        }
+      }, 100);
+
+      return () => clearTimeout(timer);
     }
-  }, [isAuthenticated, loading]);
+  }, [isAuthenticated, loading, router]);
 
   // 🔌 SOCKET LIFECYCLE
   useEffect(() => {
     if (isAuthenticated) {
       console.log("🔌 Initializing socket");
       initSocket();
+      
+      // Firebase Messaging will be added later
+      // initializeFirebaseMessaging().then((token) => {
+      //   if (token) {
+      //     console.log('📱 Saving Firebase token to backend');
+      //     userAPI.savePushToken(token).catch(err => 
+      //       console.error('Failed to save push token:', err)
+      //     );
+      //   }
+      // });
+      // setupFirebaseNotificationListener();
     } else {
       console.log("❌ Disconnecting socket");
       disconnectSocket();
@@ -118,7 +136,12 @@ function RootLayoutNav() {
 
   return (
     <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-      <Stack screenOptions={{ headerShown: false }} />
+      <Stack 
+        screenOptions={{ 
+          headerShown: false,
+          animationEnabled: false,
+        }} 
+      />
       <StatusBar style="auto" />
     </ThemeProvider>
   );
